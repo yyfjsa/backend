@@ -43,6 +43,8 @@ dependencies {
 	testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
 	testImplementation("org.springframework.security:spring-security-test")
 	testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+	implementation("com.alipay.sdk:alipay-sdk-java:4.40.54.ALL")
+	implementation("org.springframework.boot:spring-boot-starter-amqp")
 }
 
 kotlin {
