@@ -1,36 +1,36 @@
-package org.example.backend.service.order
+package org.example.backend.service
 
 import org.example.backend.dto.OrderItemDto
 import org.example.backend.exception.BusinessException
 import org.example.backend.model.entity.OrderEntity
 import org.example.backend.model.entity.OrderItemEntity
+import org.example.backend.model.enums.ErrorCode
 import org.example.backend.model.enums.OrderStatus
 import org.example.backend.repository.jpa.OrderRepository
-import org.example.backend.service.inventory.InventoryService
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.math.BigDecimal
-import java.time.LocalDateTime
-import kotlin.random.Random
-
 
 @Service
-class OrderService(private val orderRepository: OrderRepository,
-                   private val inventoryService: InventoryService
+class OrderService(
+    private val orderRepository: OrderRepository,
+    private val inventoryService: InventoryService,
+    private val orderHistoryService: OrderHistoryService,
 ) {
 
     /**
      * 创建订单
      */
     @Transactional
-    fun createOrder(userId: Long, items: List<OrderItemDto>): OrderEntity {
+    fun createOrder(userId: Long, items: List<OrderItemDto>, tradeNo: String): OrderEntity {
         // 1. 检查库存
         items.forEach { item ->
             val availableStock = inventoryService.getAvailableStock(item.productId)
             if (availableStock < item.quantity) {
-                throw BusinessException("库存不足: 商品 ${item.productId}")
+                throw BusinessException(ErrorCode.INSUFFICIENT_STOCK, "商品 ${item.productId} 库存不足")
             }
         }
+
         // 2. 扣减库存
         items.forEach { item ->
             inventoryService.reduceStock(item.productId, item.quantity)
@@ -41,24 +41,28 @@ class OrderService(private val orderRepository: OrderRepository,
 
         // 4. 创建订单
         val order = OrderEntity(
-            orderNumber = generateOrderNumber(), // 生成订单号
+            orderId = generateOrderNumber(), // 生成订单号
             userId = userId,
             totalAmount = totalAmount,
+            tradeNo = tradeNo,
             status = OrderStatus.PENDING_PAYMENT
         )
 
-        // 5. 添加订单项
+        // 5. 创建订单项并与订单关联
         items.forEach { item ->
             val orderItem = OrderItemEntity(
                 productId = item.productId,
                 quantity = item.quantity,
                 price = item.price,
-                order=order
+                order = order
             )
             order.addItem(orderItem)
         }
 
-        // 6. 保存订单
+        // 6. 记录订单历史
+        orderHistoryService.saveOrderStatusChange(order, OrderStatus.CreateOrder)
+
+        // 7. 保存订单
         return orderRepository.save(order)
     }
 
@@ -68,7 +72,7 @@ class OrderService(private val orderRepository: OrderRepository,
     @Transactional
     fun cancelOrder(orderNumber: String) {
         val order = orderRepository.findById(orderNumber)
-            .orElseThrow { BusinessException("订单不存在: $orderNumber") }
+            .orElseThrow { BusinessException(ErrorCode.ORDER_NOT_FOUND, "订单号 $orderNumber 不存在") }
 
         if (order.status == OrderStatus.PENDING_PAYMENT) {
             // 1. 更新订单状态
@@ -80,7 +84,7 @@ class OrderService(private val orderRepository: OrderRepository,
                 inventoryService.restoreStock(item.productId, item.quantity)
             }
         } else {
-            throw BusinessException("订单状态不允许取消: ${order.status}")
+            throw BusinessException(ErrorCode.ORDER_STATUS_INVALID, "订单状态不允许取消: ${order.status}")
         }
     }
 
@@ -88,16 +92,16 @@ class OrderService(private val orderRepository: OrderRepository,
      * 支付订单
      */
     @Transactional
-    fun payOrder(orderId: Long) {
+    fun payOrder(orderId: String) {
         val order = orderRepository.findById(orderId)
-            .orElseThrow { BusinessException("订单不存在: $orderId") }
+            .orElseThrow { BusinessException(ErrorCode.ORDER_NOT_FOUND, "订单ID $orderId 不存在") }
 
         if (order.status == OrderStatus.PENDING_PAYMENT) {
             // 1. 更新订单状态
             order.status = OrderStatus.PAID
             orderRepository.save(order)
         } else {
-            throw BusinessException("订单状态不允许支付: ${order.status}")
+            throw BusinessException(ErrorCode.ORDER_STATUS_INVALID, "订单状态不允许支付: ${order.status}")
         }
     }
 

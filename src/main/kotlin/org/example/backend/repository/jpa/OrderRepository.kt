@@ -7,19 +7,12 @@ import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
 import org.springframework.stereotype.Repository
+import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDateTime
 
 @Repository
 interface OrderRepository : JpaRepository<OrderEntity, String> {
-
-    /**
-     * 根据订单号查找订单
-     */
-    fun findByOrderNumber(orderNumber: String): OrderEntity?
-
-    /**
-     * 根据用户ID查找订单列表
-     */
+    fun findByTradeNo(tradeNo: String): MutableList<OrderEntity>
     fun findByUserId(userId: Long): List<OrderEntity>
 
     /**
@@ -30,10 +23,11 @@ interface OrderRepository : JpaRepository<OrderEntity, String> {
     /**
      * 更新订单状态
      */
+    @Transactional
     @Modifying
     @Query("UPDATE OrderEntity o SET o.status = :status, o.updatedAt = :updatedAt WHERE o.id = :orderId")
     fun updateOrderStatus(
-        @Param("orderId") orderId: Long,
+        @Param("orderId") orderId: String,
         @Param("status") status: OrderStatus,
         @Param("updatedAt") updatedAt: LocalDateTime = LocalDateTime.now()
     ): Int

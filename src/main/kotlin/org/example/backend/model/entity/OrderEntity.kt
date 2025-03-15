@@ -10,15 +10,19 @@ import java.time.LocalDateTime
 @Table(name="orders")
 class OrderEntity (
     @Id
-    @Column(name="order_number", nullable = false, unique = true)
-    var orderNumber: String,
+    @Column(name="order_id", nullable = false, unique = true)
+    var orderId: String,
     @Column(name="user_id", nullable = false)
     var userId:Long,
+    @Column(name="trade_no", nullable = false)
+    var tradeNo: String? = null,
     @Column(name="total_amount", nullable = false)
     var totalAmount: BigDecimal,
     @Enumerated(EnumType.STRING)
     @Column(name="status", nullable = false)
     var status: OrderStatus =OrderStatus.PENDING_PAYMENT,
+    @Column(name="created_at", nullable = false)
+    var createdAt: LocalDateTime = LocalDateTime.now(),
     @Column(name = "updated_at", nullable = false)
     var updatedAt: LocalDateTime = LocalDateTime.now(),
     @OneToMany(mappedBy = "order", cascade = [CascadeType.ALL], fetch = FetchType.LAZY, orphanRemoval = true)

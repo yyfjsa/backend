@@ -33,7 +33,7 @@ interface PaymentRepository : JpaRepository<PaymentEntity, Long> {
     @Modifying
     @Query("UPDATE PaymentEntity p SET p.status = :status, p.updatedAt = :updatedAt WHERE p.id = :paymentId")
     fun updatePaymentStatus(
-        @Param("paymentId") paymentId: Long,
+        @Param("paymentId") paymentId: String,
         @Param("status") status: PaymentStatus,
         @Param("updatedAt") updatedAt: LocalDateTime = LocalDateTime.now()
     ): Int
@@ -44,7 +44,7 @@ interface PaymentRepository : JpaRepository<PaymentEntity, Long> {
     @Modifying
     @Query("UPDATE PaymentEntity p SET p.status = :status, p.updatedAt = :updatedAt WHERE p.orderId = :orderId")
     fun updatePaymentStatusByOrderId(
-        @Param("orderId") orderId: Long,
+        @Param("orderId") orderId: String,
         @Param("status") status: PaymentStatus,
         @Param("updatedAt") updatedAt: LocalDateTime = LocalDateTime.now()
     ): Int

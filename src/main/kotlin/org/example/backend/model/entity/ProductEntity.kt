@@ -11,7 +11,7 @@ class ProductEntity(
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "product_id", nullable = false)
     var productId: Long,
-    @Column(name = "name", nullable = false, length = 100)
+    @Column(name = "product_name", nullable = false, length = 100)
     var name: String, // 商品名称
 
     @Column(name = "description", columnDefinition = "TEXT")

@@ -9,8 +9,12 @@ import java.time.LocalDateTime
 @Entity
 @Table(name = "payments")
 class PaymentEntity(
+    @Id
+    @Column(name="payment_id", nullable = false)
+    var paymentId:String,
+
     @Column(name = "order_id", nullable = false)
-    var orderId: Long, // 关联的订单ID
+    var orderId: String, // 关联的订单ID
 
     @Column(name = "amount", nullable = false)
     var amount: BigDecimal, // 支付金额
